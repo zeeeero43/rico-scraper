@@ -1,0 +1,62 @@
+# REPLIT PROMPT: WHATSAPP WEB INTEGRATION
+
+```
+Erstelle WhatsApp Web Automation System mit 2 separaten Workflows:
+
+WORKFLOW 1: SCRAPING (bereits vorhanden)
+- Behält bestehenden Revolico-Scraper bei
+- Speichert Telefonnummern in JSON-Datei mit Status
+
+WORKFLOW 2: WHATSAPP OUTREACH (komplett neu)
+- Selenium-basierte WhatsApp Web Automatisierung
+- Liest gescrapte Telefonnummern ein
+- Sendet personalisierte Nachrichten automatisch
+
+REQUIREMENTS:
+
+1. WHATSAPP BOT KLASSE:
+- Setup Chrome ohne --headless (QR-Code scannen nötig)
+- Login-Funktion für WhatsApp Web QR-Code
+- Message-Send-Funktion für einzelne Nummern
+- Telefonnummer-Formatierung für WhatsApp (+53XXXXXXXX)
+
+2. SAFETY FEATURES:
+- Konfigurierbarer Delay zwischen Nachrichten (Standard: 60-180 Sekunden)
+- Daily Limit für gesendete Nachrichten (Standard: 50)
+- Counter für bereits heute versendete Nachrichten
+- Status-Tracking welche Nummern bereits kontaktiert wurden
+
+3. DATENBANK/SPEICHERUNG:
+- JSON-Datei erweitern um contacted_status
+- Timestamps für letzte Kontaktierung
+- Erfolg/Fehler Status pro Nummer
+- Verhindere Duplikate
+
+4. USER INTERFACE:
+- Separater "Start Outreach" Button neben "Start Scraping"
+- Input-Felder für Custom Message Template
+- Settings für Delay-Range und Daily Limit  
+- Real-time Status Display während Versendung
+- Stop/Pause Funktionalität
+
+5. MESSAGE HANDLING:
+- Template-System für personalisierte Nachrichten
+- Platzhalter für dynamische Inhalte
+- Standard-Message für Rico-Cuba Promotion
+- Fehlerbehandlung für nicht erreichbare Nummern
+
+6. WORKFLOW INTEGRATION:
+- Nach Scraping: Zeige "X neue Nummern gefunden - Outreach starten?"
+- Vor Outreach: Zeige Übersicht uncontacted numbers
+- Während Outreach: Live-Counter und Progress
+- Nach Outreach: Summary Report mit Erfolgsrate
+
+7. TECHNICAL SPECS:
+- Verwendung von Selenium WebDriver
+- WhatsApp Web URL-Format für Direktnachrichten
+- Element-Selektoren für Message-Input
+- Robust error handling und retries
+- Clean browser shutdown
+
+Erstelle komplette Funktionalität als Erweiterung des bestehenden Scraping-Systems.
+```

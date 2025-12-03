@@ -1,0 +1,125 @@
+# REPLIT PROMPT: REVOLICO TELEFONNUMMER SCRAPER
+
+## FÜR REPLIT AGENT/ASSISTANT:
+
+```
+Erstelle ein Python-Script das folgendes macht:
+
+1. WEBSITE AUFRUFEN:
+   - Gehe zu revolico.com Startseite
+   - Verwende requests und BeautifulSoup
+   - Setze realistic User-Agent header
+   - Füge 2-3 Sekunden delay zwischen requests hinzu
+
+2. ERSTE 3 ANZEIGEN FINDEN:
+   - Identifiziere die ersten 3 Produktanzeigen auf der Startseite
+   - Extrahiere den Link zu jeder Anzeigen-Detail-Seite
+   - Speichere Anzeigen-Titel für jeden gefundenen Link
+
+3. DETAIL-SEITEN BESUCHEN:
+   - Öffne jede der 3 Anzeigen-Detail-Seiten
+   - Suche nach Telefonnummern in verschiedenen Formaten:
+     * +53 XXXX XXXX
+     * 53XXXXXXXX 
+     * XXXX-XXXX
+     * (XXX) XXX-XXXX
+   - Verwende Regex um alle möglichen Telefonnummer-Formate zu finden
+
+4. DATEN SPEICHERN:
+   - Erstelle eine strukturierte Liste mit:
+     * Anzeigen-Titel
+     * Anzeigen-URL  
+     * Gefundene Telefonnummer(n)
+     * Datum/Zeit des Scraping
+   - Speichere Ergebnisse in JSON-Datei "revolico_data.json"
+   - Zeige Ergebnisse auch in Console an
+
+5. ERROR HANDLING:
+   - Behandle Timeout-Errors
+   - Behandle 404/403 Errors
+   - Behandle Captcha-Seiten
+   - Logge alle Errors in separate Datei
+
+6. ANTI-DETECTION:
+   - Verwende random delays zwischen 2-5 Sekunden
+   - Rotiere User-Agents aus realistischer Liste
+   - Simuliere menschliches Verhalten
+
+REQUIREMENTS:
+- Installiere: requests, beautifulsoup4, re, json, time, random
+- Verwende try/except für robuste Fehlerbehandlung
+- Füge detaillierte print() statements für debugging hinzu
+- Mache Code modular mit separaten Funktionen
+
+OUTPUT FORMAT:
+```json
+{
+  "scraping_date": "2025-01-20 15:30:00",
+  "results": [
+    {
+      "title": "iPhone 15 Pro Max",
+      "url": "https://revolico.com/anzeige/12345",
+      "phone_numbers": ["+53 5555 1234", "53551234567"],
+      "scraped_at": "2025-01-20 15:30:15"
+    }
+  ],
+  "total_found": 3,
+  "errors": []
+}
+```
+
+Erstelle das komplette, ausführbare Python-Script mit allen imports und Funktionen.
+```
+
+## ZUSÄTZLICHE REPLIT-SPEZIFISCHE ANWEISUNGEN:
+
+```
+SETUP IN REPLIT:
+1. Erstelle neue Python Repl
+2. Installiere packages in Shell:
+   pip install requests beautifulsoup4 lxml
+
+3. MAIN.PY STRUKTUR:
+   - Haupt-Scraping-Funktion
+   - Error-Logging-Funktion  
+   - JSON-Export-Funktion
+   - Main-Runner mit if __name__ == "__main__"
+
+4. REPLIT-OPTIMIERUNG:
+   - Verwende replit.nix für package management
+   - Speichere outputs in replit files system
+   - Verwende replit secrets für sensitive data falls nötig
+
+5. TESTING:
+   - Teste zuerst mit nur 1 Anzeige
+   - Dann erweitere auf 3 Anzeigen
+   - Logge jeden Schritt ausführlich
+
+6. RATE LIMITING:
+   - Max 1 request alle 3-5 Sekunden
+   - Stop bei ersten Anzeichen von blocking
+   - Implementiere backoff-strategy bei errors
+```
+
+## ERWEITERTE FEATURES (OPTIONAL):
+
+```
+ZUSÄTZLICHE FUNKTIONEN:
+- Speichere auch Preis und Beschreibung  
+- Erkenne Kategorie der Anzeige
+- Validiere Telefonnummern auf kubanisches Format
+- Erstelle CSV-Export zusätzlich zu JSON
+- Implementiere Email-Benachrichtigung bei neuen Nummern
+- Füge Geo-Location hinzu falls in Anzeige verfügbar
+
+MONITORING:
+- Logge success/failure rates
+- Tracke response times
+- Erkenne pattern changes in HTML structure
+- Alert bei verdächtiger Aktivität detection
+```
+
+---
+
+**⚠️ WICHTIGER HINWEIS:**
+**Dieses Script ist nur für Bildungs-/Testzwecke gedacht. Respektiere robots.txt und Terms of Service. Verwende verantwortlich und nicht für Spam.**

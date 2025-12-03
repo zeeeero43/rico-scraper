@@ -1,0 +1,34 @@
+{
+  "listings": [
+    {
+      "title": "30 USD‼️‼️ CAMARA DE VIDEO o SEGURIDAD DUAL LENS, LLAMAR AL 5483590",
+      "url": "https://www.revolico.com/item/camara-de-video-o-seguridad-dual-lens-llamar-al-5483590-50389398",
+      "phones": [
+        "+5354835990"
+      ],
+      "scraped_at": "2025-07-21 16:46:33"
+    },
+    {
+      "title": "Glamurosa casa residencial en Santa Fé con una increíble vista al mar 🌊!!!",
+      "url": "https://www.revolico.com/item/glamurosa-casa-residencial-en-santa-fe-para-que-rentes-sus-habitaciones-por-noches-50186402",
+      "phones": [
+        "+5353611268"
+      ],
+      "scraped_at": "2025-07-21 16:46:40"
+    },
+    {
+      "title": "14 USDPistola Juguete (XSHOT Original) + Balas | Regalo Niño GAMA ALTA - NUEVO NERF CALIDAD Premium",
+      "url": "https://www.revolico.com/item/pistola-juguete-xshot-original-balas-regalo-nino-gama-alta-nuevo-nerf-calidad-premium-49737643",
+      "phones": [
+        "+5350588758"
+      ],
+      "scraped_at": "2025-07-21 16:46:47"
+    }
+  ],
+  "total_phones": 3,
+  "total_listings": 3,
+  "method": "CloudScraper (Profile Area Focus)",
+  "url": "https://revolico.com",
+  "duration": "20.31s",
+  "success": true
+}

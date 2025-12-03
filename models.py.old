@@ -1,0 +1,77 @@
+"""
+Datenbank-Modelle für den Revolico Scraper
+"""
+import os
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
+class Customer(db.Model):
+    """Kunden-Modell für extrahierte Telefonnummern"""
+    __tablename__ = 'customers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+
+    phone_number = db.Column(db.String(20), nullable=False, unique=True, comment='Telefonnummer (+53XXXXXXXX)')
+    contacted = db.Column(db.Boolean, default=False, nullable=False, comment='Bereits kontaktiert?')
+    source_url = db.Column(db.String(500), nullable=True, comment='Original Revolico Angebots-URL')
+    source_title = db.Column(db.String(300), nullable=True, comment='Original Angebots-Titel')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='Datum der Erfassung')
+    contacted_at = db.Column(db.DateTime, nullable=True, comment='Datum des Kontakts')
+    notes = db.Column(db.Text, nullable=True, comment='Notizen zum Kunden')
+    
+    # WhatsApp integration fields
+    whatsapp_contacted = db.Column(db.Boolean, default=False, nullable=False, comment='Via WhatsApp kontaktiert?')
+    whatsapp_message_sent = db.Column(db.Text, nullable=True, comment='Gesendete WhatsApp Nachricht')
+    whatsapp_sent_at = db.Column(db.DateTime, nullable=True, comment='WhatsApp Versand-Datum')
+    whatsapp_status = db.Column(db.String(50), nullable=True, comment='WhatsApp Status (sent/failed/pending)')
+    
+    def __repr__(self):
+        return f'<Customer {self.phone_number}>'
+    
+    def to_dict(self):
+        """Konvertiert den Kunden zu einem Dictionary für JSON"""
+        return {
+            'id': self.id,
+            'phone_number': self.phone_number,
+            'contacted': self.contacted,
+            'source_url': self.source_url,
+            'source_title': self.source_title,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'contacted_at': self.contacted_at.isoformat() if self.contacted_at else None,
+            'notes': self.notes,
+            'whatsapp_contacted': self.whatsapp_contacted,
+            'whatsapp_message_sent': self.whatsapp_message_sent,
+            'whatsapp_sent_at': self.whatsapp_sent_at.isoformat() if self.whatsapp_sent_at else None,
+            'whatsapp_status': self.whatsapp_status
+        }
+    
+
+
+def init_database(app):
+    """Initialisiert die Datenbank mit der Flask App"""
+    # Konfiguration - nur setzen wenn nicht bereits gesetzt
+    if not app.config.get("SQLALCHEMY_DATABASE_URI"):
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///revolico_customers.db")
+
+    if not app.config.get("SQLALCHEMY_ENGINE_OPTIONS"):
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+        }
+
+    if not app.config.get("SQLALCHEMY_TRACK_MODIFICATIONS"):
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # SQLAlchemy mit App initialisieren
+    db.init_app(app)
+
+    # Tabellen erstellen
+    with app.app_context():
+        db.create_all()
+        print("✅ Datenbank-Tabellen erstellt/aktualisiert")

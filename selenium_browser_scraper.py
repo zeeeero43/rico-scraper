@@ -31,9 +31,10 @@ class SeleniumBrowserScraper:
             # Try different Firefox binary locations (Snap, ESR, or standard)
             import os
             firefox_paths = [
-                '/snap/bin/firefox',              # Snap installation (Ubuntu 22.04+)
+                '/usr/bin/firefox-esr',           # Firefox ESR (apt install)
                 '/usr/lib/firefox-esr/firefox-esr', # Firefox ESR (Debian/Ubuntu)
                 '/usr/bin/firefox',                 # Standard Firefox
+                '/snap/bin/firefox',              # Snap installation (Ubuntu 22.04+)
             ]
 
             firefox_binary = None

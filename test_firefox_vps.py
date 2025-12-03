@@ -3,7 +3,7 @@ from selenium.webdriver.firefox.options import Options
 
 options = Options()
 options.add_argument('--headless')
-options.binary_location = '/snap/bin/firefox'
+options.binary_location = '/usr/bin/firefox-esr'
 
 print('Starting Firefox...')
 driver = webdriver.Firefox(options=options)

@@ -1,0 +1,16 @@
+{
+  "scraping_date": "2025-07-21T00:35:59.991090",
+  "results": [],
+  "url_attempts": [],
+  "strategy_used": null,
+  "working_url": null,
+  "errors": [
+    {
+      "error": "Critical error in scraping workflow: Chrome setup failed: Message: Service /home/runner/.wdm/drivers/chromedriver/linux64/114.0.5735.90/chromedriver unexpectedly exited. Status code was: 127\n. This might be due to missing Chrome installation in the environment.",
+      "timestamp": "2025-07-21T00:36:00.639117"
+    }
+  ],
+  "total_listings_found": 0,
+  "total_phone_numbers": 0,
+  "duration_seconds": 0.648126
+}

@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "method": "CloudScraper",
+  "url": "https://revolico.com",
+  "total_listings": 1,
+  "total_phones": 1,
+  "listings": [
+    {
+      "title": "2,700 USDSolo 2 motos Topmaq Raptor automaticas  51_000_370",
+      "url": "https://www.revolico.com/item/solo-2-motos-topmaq-raptor-automaticas-51_000_370-50442983",
+      "phones": [
+        "+5351000370"
+      ],
+      "scraped_at": "2025-07-21 01:57:12"
+    }
+  ],
+  "duration": "7.01s"
+}

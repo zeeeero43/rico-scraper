@@ -1,0 +1,153 @@
+# REPLIT PROMPT: NORMALE BROWSER-SIMULATION
+
+```
+Da revolico.com im normalen Browser ohne Cloudflare funktioniert, 
+simuliere einfach exakt normales Browser-Verhalten:
+
+NEUES EINFACHES SCRIPT:
+
+```python
+import requests
+from bs4 import BeautifulSoup
+import time
+import random
+import re
+import json
+
+def create_session():
+    session = requests.Session()
+    
+    # Exakt wie normaler Browser
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Referer': 'https://www.google.com/',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
+    })
+    
+    return session
+
+def scrape_revolico():
+    session = create_session()
+    results = []
+    
+    print("🔍 Accessing revolico.com like normal browser...")
+    
+    # Step 1: Visit homepage like normal user
+    response = session.get('https://revolico.com')
+    print(f"Homepage status: {response.status_code}")
+    
+    if response.status_code != 200:
+        print("❌ Homepage blocked")
+        return results
+    
+    # Parse homepage  
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Find first 3 listing links
+    listing_links = []
+    for link in soup.find_all('a', href=True):
+        href = link.get('href')
+        if href and ('/anuncios/' in href or '/anuncio/' in href):
+            if href.startswith('/'):
+                href = 'https://revolico.com' + href
+            listing_links.append({
+                'url': href,
+                'title': link.get_text(strip=True)
+            })
+            if len(listing_links) >= 3:
+                break
+    
+    print(f"Found {len(listing_links)} listings")
+    
+    # Visit each listing like normal user
+    for i, listing in enumerate(listing_links):
+        try:
+            print(f"\n📄 Visiting listing {i+1}: {listing['title'][:50]}...")
+            
+            # Wait like human user (2-5 seconds)
+            time.sleep(random.uniform(2, 5))
+            
+            # Visit listing page
+            response = session.get(listing['url'])
+            print(f"Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                # Extract phone numbers
+                page_text = response.text
+                
+                # Look for Cuban phone patterns
+                phone_patterns = [
+                    r'\+53\s?\d{8}',           # +53 12345678
+                    r'53\s?\d{8}',             # 53 12345678  
+                    r'\d{8}',                  # 12345678
+                    r'\(\d{3}\)\s?\d{3}-?\d{4}' # (123) 456-7890
+                ]
+                
+                found_phones = []
+                for pattern in phone_patterns:
+                    phones = re.findall(pattern, page_text)
+                    found_phones.extend(phones)
+                
+                # Remove duplicates
+                found_phones = list(set(found_phones))
+                
+                if found_phones:
+                    result = {
+                        'title': listing['title'],
+                        'url': listing['url'],
+                        'phones': found_phones,
+                        'scraped_at': time.strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    results.append(result)
+                    print(f"✅ Found phones: {found_phones}")
+                else:
+                    print("❌ No phone numbers found")
+            else:
+                print(f"❌ Failed to load listing: {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ Error with listing {i+1}: {e}")
+            continue
+    
+    return results
+
+def save_results(results):
+    # Save to JSON
+    with open('revolico_phones.json', 'w', encoding='utf-8') as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    
+    # Print summary
+    print(f"\n📊 RESULTS SUMMARY:")
+    print(f"Total listings scraped: {len(results)}")
+    total_phones = sum(len(r['phones']) for r in results)
+    print(f"Total phone numbers found: {total_phones}")
+    
+    for i, result in enumerate(results, 1):
+        print(f"\n{i}. {result['title'][:60]}...")
+        print(f"   URL: {result['url']}")
+        print(f"   Phones: {result['phones']}")
+
+if __name__ == "__main__":
+    results = scrape_revolico()
+    save_results(results)
+    print("\n✅ Scraping completed!")
+```
+
+WICHTIG:
+- Verwende NUR normales requests + BeautifulSoup
+- Entferne alle komplexen Cloudflare-Bypass-Tools
+- Simuliere exakt normales User-Verhalten
+- Realistische Delays zwischen Requests (2-5 Sekunden)
+- Normale Browser-Headers wie echter User
+
+Das sollte ohne Probleme funktionieren da es sich wie normaler Browser verhält.
+```

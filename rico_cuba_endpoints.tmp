@@ -1,0 +1,136 @@
+# ============================================================================
+
+@app.route('/api/scraped-listings', methods=['GET'])
+def get_scraped_listings():
+    """
+    API Endpoint für Rico-Cuba zum Abrufen aller gescrapten Listings
+    Query params:
+      - exported=false: nur nicht-exportierte
+      - limit=50: max Anzahl
+    """
+    try:
+        # Get query parameters
+        only_unexported = request.args.get('exported') == 'false'
+        limit = int(request.args.get('limit', 100))
+
+        # Build query
+        query = ScrapedListing.query
+
+        if only_unexported:
+            query = query.filter_by(exported=False)
+
+        # Get listings
+        listings = query.order_by(ScrapedListing.created_at.desc()).limit(limit).all()
+
+        return jsonify({
+            'success': True,
+            'count': len(listings),
+            'listings': [listing.to_dict() for listing in listings]
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/scraped-listings/<int:listing_id>/mark-exported', methods=['POST'])
+def mark_listing_exported(listing_id):
+    """Markiert ein Listing als exportiert"""
+    try:
+        listing = ScrapedListing.query.get(listing_id)
+        if not listing:
+            return jsonify({'success': False, 'error': 'Listing not found'}), 404
+
+        listing.exported = True
+        listing.exported_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/image-proxy/<image_hash>', methods=['GET'])
+def image_proxy(image_hash):
+    """
+    Image Proxy Endpoint - gibt Bild zurück ohne URL zu exposen
+    Rico-Cuba ruft Bilder über diesen Endpoint ab
+    """
+    try:
+        # Get original URL from hash
+        original_url = ImageProxyService.get_url_by_hash(image_hash)
+
+        if not original_url:
+            return jsonify({'error': 'Image not found'}), 404
+
+        # Fetch image from Revolico
+        response = requests.get(original_url, timeout=10)
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch image'}), 500
+
+        # Return image with proper content type
+        content_type = response.headers.get('Content-Type', 'image/jpeg')
+
+        return response.content, 200, {
+            'Content-Type': content_type,
+            'Cache-Control': 'public, max-age=86400'  # Cache for 24h
+        }
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/save-scraped-listing', methods=['POST'])
+def save_scraped_listing():
+    """
+    Interner Endpoint zum Speichern eines gescrapten Listings
+    Wird vom Scraper nach jedem erfolgreichen Scrape aufgerufen
+    """
+    try:
+        data = request.json
+
+        # Process images - convert URLs to hashes
+        image_urls = data.get('images', [])
+        image_hashes = ImageProxyService.process_image_urls(image_urls)
+
+        # Check if listing already exists (by revolico_id)
+        existing = ScrapedListing.query.filter_by(
+            revolico_id=data['revolico_id']
+        ).first()
+
+        if existing:
+            # Update existing listing
+            existing.title = data['title']
+            existing.description = data.get('description', '')
+            existing.price = data.get('price')
+            existing.currency = data.get('currency', 'USD')
+            existing.phone_numbers = data['phone_numbers']
+            existing.image_ids = image_hashes
+            existing.category = data.get('category', '')
+            existing.location = data.get('location', '')
+            existing.condition = data.get('condition', 'used')
+            existing.updated_at = datetime.utcnow()
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'action': 'updated',
+                'listing_id': existing.id
+            }), 200
+
+        else:
+            # Create new listing
+            listing = ScrapedListing(
+                revolico_id=data['revolico_id'],
+                title=data['title'],
+                description=data.get('description', ''),
+                url=data['url'],
+                price=data.get('price'),
+                currency=data.get('currency', 'USD'),
+                phone_numbers=data['phone_numbers'],
