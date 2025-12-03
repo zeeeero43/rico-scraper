@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <!-- Updated: 2025-11-19 Seller Name Feature -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolico Telefonnummer Scraper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .scraper-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        
+        .status-card {
+            text-align: center;
+        }
+        
+        .status-indicator {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .status-active {
+            color: #48bb78;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-inactive {
+            color: #a0aec0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .control-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #fc8181, #f56565);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #68d391, #48bb78);
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .log-container {
+            height: 300px;
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .log-info { color: #63b3ed; }
+        .log-warning { color: #fbb6ce; }
+        .log-error { color: #fc8181; }
+        .log-success { color: #68d391; }
+        
+        .results-container {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .result-phones {
+            background: #edf2f7;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-bottom: 8px;
+        }
+        
+        .result-url {
+            font-size: 0.9em;
+            color: #718096;
+            word-break: break-all;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .customers-section {
+            grid-column: 1 / -1;
+        }
+        
+        .customers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .customers-table th,
+        .customers-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .customers-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .customers-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .contact-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-btn.contacted {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .contact-btn.pending {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .contact-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .customer-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .customer-stat {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .customer-stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .customer-stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='whatsapp_accounts.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-phone"></i> Revolico Telefonnummer Scraper</h1>
+            <p>Extrahiert Telefonnummern aus Revolico-Anzeigen</p>
+        </div>
+        
+        <div class="dashboard">
+            <!-- Kundendatenbank als Hauptbereich -->
+            <div class="card customers-section">
+                <h3><i class="fas fa-users"></i> Kundendatenbank</h3>
+                <div class="customer-stats" id="customer-stats">
+                    <div class="customer-stat">
+                        <div class="customer-stat-value" id="total-customers">0</div>
+                        <div class="customer-stat-label">Gesamt Kunden</div>
+                    </div>
+                    <div class="customer-stat">
+                        <div class="customer-stat-value" id="contacted-customers">0</div>
+                        <div class="customer-stat-label">Kontaktiert</div>
+                    </div>
+                    <div class="customer-stat">
+                        <div class="customer-stat-value" id="pending-customers">0</div>
+                        <div class="customer-stat-label">Noch zu kontaktieren</div>
+                    </div>
+                </div>
+                
+                <!-- WhatsApp Automation Section -->
+                <div style="margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 8px; border: 2px dashed #a0aec0;">
+                    <h4 style="margin-bottom: 15px; color: #2d3748;">📱 WhatsApp Automatisierung</h4>
+
+                    <!-- WhatsApp Accounts Management -->
+                    <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h5 style="margin: 0; color: #2d3748;">💼 WhatsApp Accounts</h5>
+                            <button onclick="showAddAccountModal()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                ➕ Account hinzufügen
+                            </button>
+                        </div>
+
+                        <div id="accountsList" style="display: grid; gap: 10px;">
+                            <div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">
+                                Laden...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <button id="setupWhatsAppBtn" class="contact-btn pending" onclick="setupWhatsApp()" style="display: none;">
+                            🚀 WhatsApp Setup
+                        </button>
+                        <button id="startCampaignBtn" class="contact-btn pending" onclick="startWhatsAppCampaign()" disabled>
+                            📤 Kampagne starten
+                        </button>
+                        <button id="stopWhatsAppBtn" class="contact-btn contacted" onclick="stopWhatsApp()" style="display: none;">
+                            ⏹ Stoppen
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label for="messageTemplate" style="font-weight: bold; color: #4a5568; display: block; margin-bottom: 5px;">Nachrichten-Vorlage:</label>
+                            <select id="messageTemplate" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                <option value="rico_cuba_promotion">Rico-Cuba Promotion (Standard)</option>
+                                <option value="business_opportunity">Geschäftsmöglichkeit</option>
+                                <option value="simple_intro">Einfache Einführung</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="dailyLimit" style="font-weight: bold; color: #4a5568; display: block; margin-bottom: 5px;">Täglich Limit:</label>
+                            <input type="number" id="dailyLimit" value="50" min="1" max="200"
+                                   style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        </div>
+                    </div>
+
+                    <!-- Message Editor -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="customMessage" style="font-weight: bold; color: #4a5568; display: block; margin-bottom: 5px;">
+                            Nachricht bearbeiten:
+                            <span style="font-weight: normal; color: #718096; font-size: 12px;">
+                                (Variablen: {name}, {phone}, {title})
+                            </span>
+                        </label>
+                        <textarea id="customMessage" rows="6"
+                            style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical;"
+                            placeholder="Ihre Nachricht hier eingeben...">🏝️ Hola! Soy de Rico-Cuba, una nueva Plattform für kubanische Dienstleistungen.
+
+Wir helfen kubanischen Unternehmern dabei, ihre Services online anzubieten. Würden Sie gerne mehr über unsere kostenlosen Marketing-Services erfahren?
+
+🔗 Rico-Cuba.com</textarea>
+                        <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="saveMessage()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                    💾 Speichern
+                                </button>
+                                <button onclick="previewMessage()" style="background: #6366f1; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                    👁️ Vorschau
+                                </button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="saveStatus" style="color: #10b981; font-size: 12px; display: none;">✅ Gespeichert!</span>
+                                <span style="color: #718096; font-size: 12px;">
+                                    <span id="messageLength">0</span>/1000 Zeichen
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="whatsapp-status" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="background: #fff; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                            <div style="font-weight: bold; color: #2d3748; font-size: 0.9em;">Status</div>
+                            <div id="whatsappStatus" style="color: #718096; font-size: 0.85em;">Nicht eingerichtet</div>
+                        </div>
+                        <div style="background: #fff; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                            <div style="font-weight: bold; color: #2d3748; font-size: 0.9em;">Heute gesendet</div>
+                            <div id="messagesSentToday" style="color: #718096; font-size: 0.85em;">0</div>
+                        </div>
+                        <div style="background: #fff; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                            <div style="font-weight: bold; color: #2d3748; font-size: 0.9em;">Nicht kontaktiert</div>
+                            <div id="uncontactedCount" style="color: #718096; font-size: 0.85em;">-</div>
+                        </div>
+                    </div>
+                    
+                    <!-- WhatsApp Logs -->
+                    <div id="whatsapp-logs" style="background: #1a202c; color: #e2e8f0; padding: 10px; border-radius: 6px; height: 150px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.75em;">
+                        <div style="color: #68d391;">[System] WhatsApp Automatisierung bereit</div>
+                    </div>
+                    
+                    <!-- QR Code Display -->
+                    <div id="qrCodeContainer" style="display: none; margin-top: 15px; text-align: center; border: 2px solid #60a5fa; border-radius: 10px; padding: 20px; background: #1e293b;">
+                        <h4 style="color: #60a5fa; margin: 0 0 15px 0;">📱 WhatsApp QR-Code</h4>
+                        <p style="color: #e2e8f0; margin-bottom: 20px; font-size: 16px;">Scannen Sie diesen QR-Code mit Ihrem Handy in WhatsApp</p>
+                        <img id="qrCodeImage" src="" alt="WhatsApp QR Code" style="width: auto; height: auto; max-width: 100%; border: 2px solid #334155; border-radius: 8px; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+                        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+                            <button onclick="refreshQrCode()" style="background: #22d3ee; color: #0f172a; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                🔄 QR-Code aktualisieren
+                            </button>
+                            <button onclick="stopWhatsAppSetup()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                ⏹ Setup stoppen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Account Modal -->
+                    <div id="addAccountModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%;">
+                            <h4 style="margin: 0 0 20px 0; color: #2d3748;">Neuen WhatsApp Account hinzufügen</h4>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #4a5568;">Account Name:</label>
+                                <input type="text" id="newAccountName" placeholder="z.B. Business Account 1" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #4a5568;">Tägliches Limit:</label>
+                                <input type="number" id="newAccountLimit" value="100" min="1" max="500" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="createAccount()" style="flex: 1; background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                    Erstellen
+                                </button>
+                                <button onclick="hideAddAccountModal()" style="flex: 1; background: #6b7280; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                    Abbrechen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0; text-align: center;">
+                    <button type="button" id="clear-database-btn" class="btn btn-danger" onclick="clearDatabase()">
+                        <i class="fas fa-trash-alt"></i> Datenbank leeren
+                    </button>
+                </div>
+                
+                <div id="customers-loading" class="text-center" style="padding: 20px;">
+                    <div class="loading"></div> Lade Kundendaten...
+                </div>
+                
+                <div id="customers-container" class="hidden">
+                    <table class="customers-table">
+                        <thead>
+                            <tr>
+                                <th>Profil</th>
+                                <th>Telefonnummer</th>
+                                <th>Name</th>
+                                <th>Quelle</th>
+                                <th>Erfasst am</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- Wird dynamisch gefüllt -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="no-customers" class="hidden" style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-users" style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p>Noch keine Kunden in der Datenbank.</p>
+                    <p>Starte einen Scraping-Prozess, um Telefonnummern zu sammeln.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scraper-controls">
+            <div class="card status-card">
+                <h3><i class="fas fa-heartbeat"></i> System Status</h3>
+                <div id="status-indicator" class="status-indicator status-inactive">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div id="status-text">Bereit</div>
+                <div id="status-details" style="margin-top: 10px; font-size: 0.9em; color: #718096;"></div>
+            </div>
+            
+            <div class="card">
+                <h3><i class="fas fa-cog"></i> Scraping Konfiguration</h3>
+                <form class="control-form" id="scraping-form">
+                    <div class="form-group">
+                        <label for="max-listings">Max. Anzeigen:</label>
+                        <input type="number" id="max-listings" min="1" max="10" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="min-delay">Min. Verzögerung (Sek.):</label>
+                        <input type="number" id="min-delay" min="1" max="10" step="0.5" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-delay">Max. Verzögerung (Sek.):</label>
+                        <input type="number" id="max-delay" min="2" max="20" step="0.5" value="8">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight: 600; color: #2c3e50;">
+                            <input type="checkbox" id="use-selenium-browser" style="margin-right: 8px;" checked disabled>
+                            Firefox Browser (einzige funktionierende Methode)
+                        </label>
+                        <small style="display: block; color: #27ae60; margin-top: 4px; font-weight: 500;">
+                            ✓ Umgeht alle Website-Blockaden durch echten Browser
+                        </small>
+                    </div>
+                    <button type="submit" id="start-btn" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Scraping starten
+                    </button>
+                    <button type="button" id="stop-btn" class="btn btn-danger hidden">
+                        <i class="fas fa-stop"></i> Stoppen
+                    </button>
+                </form>
+            </div>
+            
+            <div class="card full-width">
+                <h3><i class="fas fa-terminal"></i> Live Log</h3>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry log-info">[System] Bereit für Scraping...</div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button type="button" id="test-connection-btn" class="btn btn-secondary">
+                        <i class="fas fa-wifi"></i> Verbindung testen
+                    </button>
+                    <button type="button" id="clear-logs-btn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Logs löschen
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="results-section" class="hidden">
+            <div class="card">
+                <h3><i class="fas fa-chart-bar"></i> Ergebnisse</h3>
+                <div class="stats" id="stats-container"></div>
+                <div style="margin-bottom: 15px;">
+                    <button type="button" id="download-btn" class="btn btn-success">
+                        <i class="fas fa-download"></i> Ergebnisse herunterladen
+                    </button>
+                </div>
+                <div class="results-container" id="results-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // DOM elements
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const statusDetails = document.getElementById('status-details');
+        const scrapingForm = document.getElementById('scraping-form');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const logContainer = document.getElementById('log-container');
+        const resultsSection = document.getElementById('results-section');
+        const statsContainer = document.getElementById('stats-container');
+        const resultsContainer = document.getElementById('results-container');
+        const clearLogsBtn = document.getElementById('clear-logs-btn');
+        const testConnectionBtn = document.getElementById('test-connection-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        
+        // Customer database elements
+        const customersLoading = document.getElementById('customers-loading');
+        const customersContainer = document.getElementById('customers-container');
+        const noCustomers = document.getElementById('no-customers');
+        const customersTableBody = document.getElementById('customers-table-body');
+        
+        // WhatsApp elements
+        const setupWhatsAppBtn = document.getElementById('setupWhatsAppBtn');
+        const startCampaignBtn = document.getElementById('startCampaignBtn');
+        const stopWhatsAppBtn = document.getElementById('stopWhatsAppBtn');
+        const messageTemplate = document.getElementById('messageTemplate');
+        const dailyLimit = document.getElementById('dailyLimit');
+        const whatsappStatus = document.getElementById('whatsappStatus');
+        const messagesSentToday = document.getElementById('messagesSentToday');
+        const uncontactedCount = document.getElementById('uncontactedCount');
+        const whatsappLogs = document.getElementById('whatsapp-logs');
+        const totalCustomers = document.getElementById('total-customers');
+        const contactedCustomers = document.getElementById('contacted-customers');
+        const pendingCustomers = document.getElementById('pending-customers');
+        
+        // Application state
+        let scrapingActive = false;
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            addLogEntry('info', '[System] Verbindung zum Server hergestellt');
+            updateStatus();
+            loadCustomers();
+        });
+        
+        socket.on('disconnect', () => {
+            addLogEntry('error', '[System] Verbindung zum Server verloren');
+        });
+        
+        socket.on('log_message', (data) => {
+            addLogEntry(data.level.toLowerCase(), `[${data.timestamp}] ${data.message}`);
+        });
+        
+        socket.on('scraping_started', (data) => {
+            scrapingActive = true;
+            updateUI();
+            addLogEntry('success', `[System] Scraping gestartet: ${JSON.stringify(data.config)}`);
+        });
+        
+        socket.on('scraping_completed', (data) => {
+            scrapingActive = false;
+            updateUI();
+            displayResults(data.results);
+            loadCustomers(); // Reload customers after new scraping
+            addLogEntry('success', '[System] Scraping erfolgreich abgeschlossen');
+        });
+        
+        socket.on('scraping_error', (data) => {
+            scrapingActive = false;
+            updateUI();
+            addLogEntry('error', `[System] Scraping Fehler: ${data.message}`);
+        });
+        
+        socket.on('scraping_stopped', (data) => {
+            scrapingActive = false;
+            updateUI();
+            addLogEntry('warning', `[System] ${data.message}`);
+        });
+        
+        // Event listeners
+        scrapingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await startScraping();
+        });
+        
+        stopBtn.addEventListener('click', async () => {
+            await stopScraping();
+        });
+        
+        clearLogsBtn.addEventListener('click', async () => {
+            await clearLogs();
+        });
+        
+        testConnectionBtn.addEventListener('click', async () => {
+            await testConnection();
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            window.open('/api/download-results', '_blank');
+        });
+        
+        // Functions
+        function addLogEntry(level, message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${level}`;
+            logEntry.textContent = message;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    scrapingActive = data.scraping_active;
+                    updateUI();
+                    
+                    if (data.has_results && !scrapingActive) {
+                        displayResults(data.latest_results);
+                    }
+                    
+                    statusDetails.textContent = `Log-Größe: ${data.log_file_size}`;
+                })
+                .catch(error => {
+                    console.error('Status update failed:', error);
+                });
+        }
+        
+        function updateUI() {
+            if (scrapingActive) {
+                statusIndicator.className = 'status-indicator status-active';
+                statusText.textContent = 'Scraping läuft...';
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+                startBtn.disabled = true;
+            } else {
+                statusIndicator.className = 'status-indicator status-inactive';
+                statusText.textContent = 'Bereit';
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                startBtn.disabled = false;
+            }
+        }
+        
+        async function startScraping() {
+            const config = {
+                max_listings: parseInt(document.getElementById('max-listings').value),
+                min_delay: parseFloat(document.getElementById('min-delay').value),
+                max_delay: parseFloat(document.getElementById('max-delay').value),
+                use_selenium_browser: true  // Always use Selenium browser
+            };
+            
+            try {
+                const response = await fetch('/api/start-scraping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addLogEntry('success', '[System] Scraping-Anfrage gesendet');
+                } else {
+                    addLogEntry('error', `[System] Fehler: ${result.error}`);
+                }
+            } catch (error) {
+                addLogEntry('error', `[System] Netzwerkfehler: ${error.message}`);
+            }
+        }
+        
+        async function stopScraping() {
+            try {
+                const response = await fetch('/api/stop-scraping', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                addLogEntry('warning', '[System] Stopp-Anfrage gesendet');
+            } catch (error) {
+                addLogEntry('error', `[System] Fehler beim Stoppen: ${error.message}`);
+            }
+        }
+        
+        async function clearLogs() {
+            try {
+                const response = await fetch('/api/clear-logs', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logContainer.innerHTML = '<div class="log-entry log-info">[System] Logs geleert</div>';
+                    addLogEntry('success', '[System] Logs erfolgreich geleert');
+                } else {
+                    addLogEntry('error', `[System] Fehler beim Löschen: ${result.error}`);
+                }
+            } catch (error) {
+                addLogEntry('error', `[System] Netzwerkfehler: ${error.message}`);
+            }
+        }
+        
+        async function testConnection() {
+            testConnectionBtn.disabled = true;
+            testConnectionBtn.innerHTML = '<div class="loading"></div> Teste...';
+            
+            try {
+                const config = {
+                    use_proxy: document.getElementById('use-proxy').checked,
+                    use_cloudscraper: document.getElementById('use-cloudscraper').checked,
+                    use_selenium: document.getElementById('use-selenium').checked
+                };
+                
+                const response = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addLogEntry('info', '[Test] Verbindungstest gestartet');
+                    
+                    if (result.main_url && result.main_url.success) {
+                        addLogEntry('success', `[Test] Hauptseite erreichbar (Status: ${result.main_url.status})`);
+                    } else {
+                        addLogEntry('error', '[Test] Hauptseite nicht erreichbar');
+                    }
+                    
+                    result.alternatives.forEach((alt, index) => {
+                        if (alt.success) {
+                            addLogEntry('success', `[Test] Alternative ${index + 1} erreichbar: ${alt.url}`);
+                        } else {
+                            addLogEntry('warning', `[Test] Alternative ${index + 1} fehlgeschlagen: ${alt.url}`);
+                        }
+                    });
+                    
+                } else {
+                    addLogEntry('error', `[Test] Verbindungstest fehlgeschlagen: ${result.error}`);
+                }
+            } catch (error) {
+                addLogEntry('error', `[Test] Netzwerkfehler: ${error.message}`);
+            } finally {
+                testConnectionBtn.disabled = false;
+                testConnectionBtn.innerHTML = '<i class="fas fa-wifi"></i> Verbindung testen';
+            }
+        }
+        
+        // Customer database functions
+        async function loadCustomers() {
+            try {
+                customersLoading.classList.remove('hidden');
+                customersContainer.classList.add('hidden');
+                noCustomers.classList.add('hidden');
+                
+                const response = await fetch('/api/customers');
+                const data = await response.json();
+                
+                if (data.success && data.customers.length > 0) {
+                    displayCustomers(data.customers);
+                    updateCustomerStats(data);
+                    customersContainer.classList.remove('hidden');
+                } else {
+                    noCustomers.classList.remove('hidden');
+                    updateCustomerStats({total_count: 0, contacted_count: 0, pending_count: 0});
+                }
+                
+                customersLoading.classList.add('hidden');
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                customersLoading.classList.add('hidden');
+                noCustomers.classList.remove('hidden');
+            }
+        }
+        
+        function displayCustomers(customers) {
+            customersTableBody.innerHTML = '';
+            
+            customers.forEach(customer => {
+                const row = document.createElement('tr');
+                
+                const statusClass = customer.contacted ? 'contacted' : 'pending';
+                const statusText = customer.contacted ? 'Kontaktiert' : 'Zu kontaktieren';
+                const actionText = customer.contacted ? 'Als kontaktiert markiert' : 'Als kontaktiert markieren';
+                
+                const createdDate = new Date(customer.created_at).toLocaleDateString('de-DE');
+                const contactedDate = customer.contacted_at ? 
+                    new Date(customer.contacted_at).toLocaleDateString('de-DE') : '-';
+                
+                row.innerHTML = `
+                    <td style="padding: 8px;">
+                        ${customer.profile_picture_id ?
+                            // Check if it's a direct URL (Revolico) or a hash (Google/proxy)
+                            (customer.profile_picture_id.startsWith('http') ?
+                                // Direct URL - use as-is
+                                `<img src="${customer.profile_picture_id}"
+                                      alt="${customer.seller_name || 'User'}"
+                                      style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;"
+                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div style="display:none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; align-items: center; justify-content: center; font-size: 18px;">
+                                     ${(customer.seller_name || '?')[0].toUpperCase()}
+                                 </div>` :
+                                // Hash - use image proxy
+                                `<img src="/api/image-proxy/${customer.profile_picture_id}"
+                                      alt="${customer.seller_name || 'User'}"
+                                      style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;"
+                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div style="display:none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; align-items: center; justify-content: center; font-size: 18px;">
+                                     ${(customer.seller_name || '?')[0].toUpperCase()}
+                                 </div>`) :
+                            `<div style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-weight: bold; font-size: 18px;">
+                                 ${(customer.seller_name || '?')[0].toUpperCase()}
+                             </div>`
+                        }
+                    </td>
+                    <td><a href="tel:${customer.phone_number}" style="color: #667eea; text-decoration: none;">
+                        ${customer.phone_number}</a></td>
+                    <td style="font-size: 0.9em; color: ${customer.seller_name ? '#2d3748' : '#a0aec0'};">
+                        ${customer.seller_name || '(Kein Name)'}
+                    </td>
+                    <td><a href="${customer.source_url}" target="_blank" style="color: #718096; font-size: 0.9em;">
+                        ${customer.source_title ? customer.source_title.substring(0, 50) + '...' : 'Revolico'}
+                    </a></td>
+                    <td style="font-size: 0.9em; color: #718096;">${createdDate}</td>
+                    <td>
+                        ${!customer.contacted ?
+                            `<button class="contact-btn pending" onclick="markAsContacted(${customer.id})">
+                                Als kontaktiert markieren
+                            </button>` :
+                            `<span style="color: #48bb78; font-size: 0.8em;">✓ Kontaktiert am ${contactedDate}</span>`
+                        }
+                    </td>
+                `;
+                
+                customersTableBody.appendChild(row);
+            });
+        }
+        
+        function updateCustomerStats(data) {
+            totalCustomers.textContent = data.total_count;
+            contactedCustomers.textContent = data.contacted_count;
+            pendingCustomers.textContent = data.pending_count;
+        }
+        
+        async function markAsContacted(customerId) {
+            try {
+                const notes = prompt('Notizen zum Kontakt (optional):');
+                
+                const response = await fetch(`/api/customers/${customerId}/contact`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: notes || '' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLogEntry('success', `[System] ${result.message}`);
+                    loadCustomers(); // Reload customer list
+                } else {
+                    addLogEntry('error', `[System] Fehler: ${result.error}`);
+                }
+            } catch (error) {
+                addLogEntry('error', `[System] Fehler beim Markieren: ${error.message}`);
+            }
+        }
+
+        async function clearDatabase() {
+            if (!confirm('Sind Sie sicher, dass Sie alle Kunden aus der Datenbank löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/customers/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLogEntry('success', `[System] ${result.message}`);
+                    loadCustomers(); // Reload customer list
+                } else {
+                    addLogEntry('error', `[System] Fehler: ${result.error}`);
+                }
+            } catch (error) {
+                addLogEntry('error', `[System] Fehler beim Leeren der Datenbank: ${error.message}`);
+            }
+        }
+
+        function displayResults(results) {
+            if (!results || !results.results) return;
+            
+            // Show results section
+            resultsSection.classList.remove('hidden');
+            
+            // Update statistics
+            statsContainer.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${results.total_listings_found || 0}</div>
+                    <div class="stat-label">Anzeigen gefunden</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${results.total_phone_numbers || 0}</div>
+                    <div class="stat-label">Telefonnummern</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${(results.success_rate || 0).toFixed(1)}%</div>
+                    <div class="stat-label">Erfolgsrate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${(results.duration_seconds || 0).toFixed(1)}s</div>
+                    <div class="stat-label">Dauer</div>
+                </div>
+            `;
+            
+            // Display individual results
+            if (results.results && results.results.length > 0) {
+                resultsContainer.innerHTML = results.results.map((result, index) => `
+                    <div class="result-item">
+                        <div class="result-title">${index + 1}. ${result.title}</div>
+                        <div class="result-phones">
+                            📞 ${result.phone_numbers && result.phone_numbers.length > 0 
+                                ? result.phone_numbers.join(', ') 
+                                : 'Keine Telefonnummern gefunden'}
+                        </div>
+                        <div class="result-url">🔗 ${result.url}</div>
+                    </div>
+                `).join('');
+            } else {
+                resultsContainer.innerHTML = '<div class="result-item">Keine Ergebnisse gefunden</div>';
+            }
+        }
+        
+        // WhatsApp Functions
+        async function setupWhatsApp() {
+            try {
+                addWhatsAppLogEntry('info', 'Starting WhatsApp Web setup...');
+                setupWhatsAppBtn.disabled = true;
+                setupWhatsAppBtn.textContent = '⏳ Setting up...';
+                
+                const response = await fetch('/api/whatsapp/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                addWhatsAppLogEntry('info', result.message);
+                
+            } catch (error) {
+                addWhatsAppLogEntry('error', `Setup error: ${error.message}`);
+                setupWhatsAppBtn.disabled = false;
+                setupWhatsAppBtn.innerHTML = '🚀 WhatsApp Setup';
+            }
+        }
+
+        async function stopWhatsApp() {
+            try {
+                const response = await fetch('/api/whatsapp/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                addWhatsAppLogEntry('info', result.message);
+                
+                resetWhatsAppButtons();
+                
+            } catch (error) {
+                addWhatsAppLogEntry('error', `Stop error: ${error.message}`);
+            }
+        }
+        
+        function resetWhatsAppButtons() {
+            setupWhatsAppBtn.disabled = false;
+            setupWhatsAppBtn.innerHTML = '🚀 WhatsApp Setup';
+            startCampaignBtn.disabled = true;
+            startCampaignBtn.innerHTML = '📤 Kampagne starten';
+            stopWhatsAppBtn.style.display = 'none';
+            whatsappStatus.textContent = 'Nicht eingerichtet';
+        }
+        
+        function addWhatsAppLogEntry(level, message) {
+            const timestamp = new Date().toLocaleTimeString('de-DE');
+            const colors = {
+                'info': '#60a5fa',
+                'success': '#68d391', 
+                'error': '#f87171',
+                'warning': '#fbbf24'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = colors[level] || '#e2e8f0';
+            logEntry.style.marginBottom = '3px';
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            whatsappLogs.appendChild(logEntry);
+            whatsappLogs.scrollTop = whatsappLogs.scrollHeight;
+        }
+        
+        // WhatsApp Socket event handlers
+        socket.on('whatsapp_log', function(data) {
+            addWhatsAppLogEntry(data.level.toLowerCase(), data.message);
+        });
+        
+        socket.on('whatsapp_qr_ready', function(data) {
+            addWhatsAppLogEntry('info', '📱 QR-Code bereit! Screenshot wird angezeigt...');
+            showQrCode(data.qr_url);
+        });
+        
+        // Listen for both whatsapp_ready and whatsapp_status events
+        socket.on('whatsapp_ready', function(data) {
+            whatsappStatus.textContent = '✅ Bereit für Kampagnen';
+            startCampaignBtn.disabled = false;
+            setupWhatsAppBtn.disabled = false;
+            setupWhatsAppBtn.innerHTML = '✅ WhatsApp bereit';
+            hideQrCode();
+        });
+
+        socket.on('whatsapp_status', function(data) {
+            if (data.status === 'ready') {
+                whatsappStatus.textContent = '✅ Bereit für Kampagnen';
+                startCampaignBtn.disabled = false;
+                setupWhatsAppBtn.disabled = false;
+                setupWhatsAppBtn.innerHTML = '✅ WhatsApp bereit';
+                hideQrCode();
+            }
+        });
+        
+        function showQrCode(qrUrl) {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            const qrImage = document.getElementById('qrCodeImage');
+            
+            if (qrContainer && qrImage) {
+                qrImage.src = qrUrl + '?t=' + Date.now(); // Cache busting
+                qrContainer.style.display = 'block';
+                addWhatsAppLogEntry('success', '✅ QR-Code wird angezeigt - scannen Sie ihn mit WhatsApp!');
+            }
+        }
+        
+        function hideQrCode() {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            if (qrContainer) {
+                qrContainer.style.display = 'none';
+            }
+        }
+        
+        function refreshQrCode() {
+            const qrImage = document.getElementById('qrCodeImage');
+            if (qrImage && qrImage.src) {
+                qrImage.src = qrImage.src.split('?')[0] + '?t=' + Date.now();
+                addWhatsAppLogEntry('info', '🔄 QR-Code aktualisiert');
+            }
+        }
+        
+        async function stopWhatsAppSetup() {
+            try {
+                const response = await fetch('/api/whatsapp/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addWhatsAppLogEntry('warning', '⏹ WhatsApp Setup gestoppt');
+                    whatsappStatus.textContent = '⏹ Gestoppt';
+                    setupWhatsAppBtn.disabled = false;
+                    setupWhatsAppBtn.innerHTML = '🚀 WhatsApp Setup';
+                    hideQrCode();
+                } else {
+                    addWhatsAppLogEntry('error', `Fehler beim Stoppen: ${result.message}`);
+                }
+            } catch (error) {
+                addWhatsAppLogEntry('error', `Netzwerkfehler beim Stoppen: ${error.message}`);
+            }
+        }
+        
+        socket.on('whatsapp_campaign_started', function(data) {
+            addWhatsAppLogEntry('info', data.message);
+        });
+        
+        socket.on('whatsapp_campaign_completed', function(data) {
+            addWhatsAppLogEntry('success', data.message);
+            resetWhatsAppButtons();
+            loadCustomers(); // Reload customer list to show updated contact status
+        });
+        
+        socket.on('whatsapp_stopped', function(data) {
+            addWhatsAppLogEntry('warning', data.message);
+            resetWhatsAppButtons();
+        });
+
+        // Force status check function
+        async function forceStatusCheck() {
+            try {
+                const response = await fetch('/api/whatsapp/status');
+                const status = await response.json();
+
+                addWhatsAppLogEntry('info', '🔄 Status wird geprüft...');
+
+                if (status.success && status.logged_in) {
+                    addWhatsAppLogEntry('success', '✅ WhatsApp ist bereit für Kampagnen!');
+                    document.getElementById('setupWhatsAppBtn').innerHTML = '✅ WhatsApp bereit';
+                    document.getElementById('startCampaignBtn').disabled = false;
+                    document.getElementById('startCampaignBtn').className = 'contact-btn pending';
+                } else {
+                    addWhatsAppLogEntry('warning', '⚠️ WhatsApp noch nicht verbunden');
+                }
+            } catch (error) {
+                addWhatsAppLogEntry('error', `Fehler beim Status prüfen: ${error.message}`);
+            }
+        }
+
+        // Check WhatsApp status and enable campaign button (Multi-Account)
+        async function checkWhatsAppStatusAndEnableButton() {
+            try {
+                // Get all accounts
+                const response = await fetch('/api/whatsapp/accounts');
+                const data = await response.json();
+
+                if (data.success && data.accounts) {
+                    // Check if any account is logged in
+                    const loggedInAccount = data.accounts.find(acc => acc.is_logged_in);
+
+                    if (loggedInAccount) {
+                        // Enable campaign button
+                        startCampaignBtn.disabled = false;
+                        whatsappStatus.textContent = `✅ Bereit (${loggedInAccount.account_name})`;
+                        addWhatsAppLogEntry('success', `✅ Account "${loggedInAccount.account_name}" ist verbunden`);
+                    } else {
+                        startCampaignBtn.disabled = true;
+                        whatsappStatus.textContent = '⚠️ Kein Account verbunden';
+                    }
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+        
+        // Start WhatsApp Campaign function
+        async function startWhatsAppCampaign() {
+            console.log('🚀 startWhatsAppCampaign() called!');
+            try {
+                const customMessage = document.getElementById('customMessage').value.trim();
+                const dailyLimit = document.getElementById('dailyLimit').value;
+
+                if (!customMessage) {
+                    alert('Bitte geben Sie eine Nachricht ein!');
+                    return;
+                }
+
+                console.log('Custom message:', customMessage, 'Daily limit:', dailyLimit);
+                addWhatsAppLogEntry('info', '🚀 Starte WhatsApp Kampagne...');
+
+                const response = await fetch('/api/whatsapp/start-campaign', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message_template: customMessage,
+                        daily_limit: parseInt(dailyLimit)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addWhatsAppLogEntry('success', '✅ Kampagne gestartet!');
+                    document.getElementById('startCampaignBtn').disabled = true;
+                } else {
+                    addWhatsAppLogEntry('error', `Fehler: ${result.message}`);
+                }
+            } catch (error) {
+                addWhatsAppLogEntry('error', `Netzwerkfehler: ${error.message}`);
+            }
+        }
+        
+        // Get message template
+        function getMessageTemplate(templateName) {
+            const templates = {
+                'rico_cuba_promotion': '🏝️ Hola! Soy de Rico-Cuba, una nueva Plattform für kubanische Dienstleistungen.\n\nWir helfen kubanischen Unternehmern dabei, ihre Services online anzubieten. Würden Sie gerne mehr über unsere kostenlosen Marketing-Services erfahren?\n\n🔗 Rico-Cuba.com',
+                'business_opportunity': '¡Hola! Ich habe Ihre Anzeige auf Revolico gesehen.\n\nWir von Rico-Cuba helfen kubanischen Geschäftsinhabern dabei, online mehr Kunden zu erreichen. Kostenlose Beratung verfügbar.\n\nHätten Sie 5 Minuten für ein kurzes Gespräch? 📞',
+                'simple_intro': 'Hola! Ich habe Ihre Anzeige gesehen und würde gerne mehr über Ihre Services erfahren. Könnten wir kurz sprechen? Vielen Dank! 😊'
+            };
+            return templates[templateName] || templates['simple_intro'];
+        }
+
+        // Load template into textarea when dropdown changes
+        function loadTemplateIntoTextarea() {
+            const templateName = document.getElementById('messageTemplate').value;
+            const message = getMessageTemplate(templateName);
+            document.getElementById('customMessage').value = message;
+            updateMessageLength();
+
+            // Save to localStorage
+            localStorage.setItem('lastWhatsAppMessage', message);
+        }
+
+        // Update character counter
+        function updateMessageLength() {
+            const message = document.getElementById('customMessage').value;
+            document.getElementById('messageLength').textContent = message.length;
+        }
+
+        // Save message explicitly with visual feedback
+        function saveMessage() {
+            const message = document.getElementById('customMessage').value.trim();
+
+            if (!message) {
+                alert('⚠️ Nachricht ist leer! Bitte geben Sie eine Nachricht ein.');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('lastWhatsAppMessage', message);
+
+            // Show success feedback
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.style.display = 'inline';
+
+            // Hide after 2 seconds
+            setTimeout(function() {
+                saveStatus.style.display = 'none';
+            }, 2000);
+        }
+
+        // Preview message with sample data
+        function previewMessage() {
+            const message = document.getElementById('customMessage').value;
+
+            if (!message.trim()) {
+                alert('⚠️ Nachricht ist leer!');
+                return;
+            }
+
+            const preview = message
+                .replace(/{name}/g, 'Juan Pérez')
+                .replace(/{phone}/g, '+53 5555 1234')
+                .replace(/{title}/g, 'Beispiel Anzeige Titel');
+
+            alert('📱 Nachricht Vorschau:\n\n' + preview);
+        }
+
+        // Update character counter on typing (but don't auto-save anymore)
+        document.getElementById('customMessage').addEventListener('input', function() {
+            updateMessageLength();
+            // Hide save status when user types (indicates unsaved changes)
+            document.getElementById('saveStatus').style.display = 'none';
+        });
+
+        // Load message from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedMessage = localStorage.getItem('lastWhatsAppMessage');
+            if (savedMessage) {
+                document.getElementById('customMessage').value = savedMessage;
+            }
+            updateMessageLength();
+        });
+
+        // Add event listener to template dropdown
+        document.getElementById('messageTemplate').addEventListener('change', loadTemplateIntoTextarea);
+
+        // Initialize
+        updateStatus();
+
+        // Update status every 15 seconds
+        setInterval(updateStatus, 15000);
+
+        // Load customer data on page load
+        loadCustomers();
+
+        // Check WhatsApp status IMMEDIATELY on page load
+        checkWhatsAppStatusAndEnableButton();
+
+        // Auto-check WhatsApp status every 60 seconds
+        setInterval(forceStatusCheck, 60000);
+    </script>
+</body>
+</html>
